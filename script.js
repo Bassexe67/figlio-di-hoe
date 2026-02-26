@@ -72,90 +72,119 @@ async function getAIResponse(userMessage) {
     
     // Come stai
     if (msg.match(/come stai|come vai|come ti senti/i)) {
-        return 'Sto perfettamente! Come AI, sono sempre operativo. Ho accesso a miliardi di informazioni. Come posso assisterti? 😊';
+        return 'Sto perfettamente! Come AI, sono sempre operativo. Ho accesso a miliardi di informazioni da Wikipedia. Come posso assisterti? 😊';
     }
     
-    // Chi sei
-    if (msg.match(/chi sei|che cos'è|presentati|cosa puoi fare/i)) {
-        return 'Sono sommo67, un assistente AI conversazionale con accesso a informazioni da Wikipedia e il web. Posso rispondere a quasi qualsiasi domanda! 🤖';
-    }
-    
-    // Cosa puoi fare
-    if (msg.match(/cosa puoi|che cosa fai|quali funzioni/i)) {
-        return 'Posso cercare informazioni su Wikipedia, rispondere a domande, dare spiegazioni dettagliate, avere conversazioni intelligenti e aiutarti a risolvere problemi. Chiedi pure!';
+    // Chi sei / Cosa puoi fare
+    if (msg.match(/chi sei|che cos'è|presentati|cosa puoi fare|quali funzioni/i)) {
+        return 'Sono sommo67, un assistente AI con accesso a Wikipedia e capacità di ragionamento avanzate. Posso rispondere a quasi qualsiasi domanda con informazioni accurate, spiegazioni dettagliate e ragionamenti intelligenti. Chiedimi pure di qualsiasi argomento! 🤖';
     }
     
     // Aiuto
     if (msg.match(/aiuto|help|puoi aiutarmi/i)) {
-        return 'Ovviamente! Sono qui proprio per questo. Raccontami il tuo problema o domanda e farò il mio meglio, cercando anche informazioni se necessario!';
+        return 'Certo! Sono qui per aiutare. Dimmi pure cosa ti serve e farò il mio meglio per trovare risposte accurate e utili!';
     }
     
     // Ringraziamenti
-    if (msg.match(/grazie|thanks|merci/i)) {
-        return 'Prego! È un piacere aiutare. C\'è altro che posso fare per te? 😄';
+    if (msg.match(/grazie|thanks|merci|apprezzo/i)) {
+        return 'Prego! È un piacere aiutare. Hai altre domande? 😊';
     }
     
     // Arrivederci
-    if (msg.match(/arrivederci|goodbye|bye|a presto|ciao ciao/i)) {
+    if (msg.match(/arrivederci|goodbye|bye|a presto|ciao ciao|buonanotte/i)) {
         return 'Arrivederci! È stato un piacere chattare con te. Torna pure quando hai bisogno! 👋';
     }
     
-    // Domande su cosa sia l'IA
-    if (msg.match(/cosa è.*ia|cos'è l'intelligenza|come funzioni/i)) {
-        return 'Sono basato su reti neurali profonde e modelli di linguaggio avanzati. Elaboro il tuo testo e genero risposte intelligenti. Ho anche accesso a Wikipedia per fornire informazioni accurate e aggiornate!';
-    }
-    
-    // Per domande generiche - cerca su Wikipedia
-    if (msg.length > 5) {
-        const searchTerms = extractKeywords(msg);
-        if (searchTerms) {
-            const wikiInfo = await searchWikipedia(searchTerms);
-            if (wikiInfo) {
-                return wikiInfo;
-            }
+    // Per qualsiasi altra domanda - cerca informazioni pertinenti
+    if (msg.length > 3) {
+        const result = await intelligentSearch(msg);
+        if (result) {
+            return result;
         }
     }
     
-    // Risposte conversazionali intelligenti
-    const conversationalResponses = [
-        'Interessante! Puoi approfondire? Mi interesserebbe saperne di più.',
-        'Buona osservazione! Quali sono i tuoi pensieri al riguardo?',
-        'Come vedi la situazione? Raccontami di più!',
-        'Non male! Cosa ti spinge a dirlo?',
-        'Capisco perfettamente. Ci sono altri dettagli che vorresti condividere?'
-    ];
-    
-    return conversationalResponses[Math.floor(Math.random() * conversationalResponses.length)];
+    // Fallback
+    return 'Interessante domanda! Puoi fornirmi più dettagli? In base a quello che mi dirai, cercherò le migliori informazioni per te.';
 }
 
-async function searchWikipedia(query) {
+async function intelligentSearch(userMessage) {
     try {
-        const response = await fetch(
-            `https://it.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`
-        );
-        const data = await response.json();
+        // Estrai i termini principali dalla domanda
+        const keywords = extractSmartKeywords(userMessage);
         
-        if (data.query.search.length === 0) {
+        if (!keywords) {
             return null;
         }
         
-        const firstResult = data.query.search[0];
-        const pageTitle = firstResult.title;
+        // Cerca su Wikipedia con i keyword estratti
+        for (const keyword of keywords) {
+            const wikiResult = await getWikipediaInfo(keyword);
+            if (wikiResult) {
+                // Formatta la risposta in modo intelligente
+                return formatIntelligentResponse(userMessage, wikiResult, keyword);
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.log('Errore nella ricerca:', error);
+        return null;
+    }
+}
+
+function extractSmartKeywords(text) {
+    // Rimuovi parole comuni e stop words
+    const stopWords = new Set([
+        'che', 'cosa', 'quando', 'dove', 'come', 'per', 'è', 'sono', 'sei', 'hai', 'puoi', 'mi', 'ti', 
+        'lo', 'la', 'un', 'uno', 'una', 'e', 'o', 'di', 'da', 'il', 'su', 'con', 'da', 'per', 'a',
+        'dal', 'alla', 'agli', 'dei', 'degli', 'delle', 'ne', 'ci', 'vi', 'in', 'tra', 'fra', 'il',
+        'sono', 'ho', 'hai', 'ha', 'abbiamo', 'avete', 'hanno', 'fai', 'fa', 'facciamo', 'fate', 'fanno',
+        'posso', 'puoi', 'può', 'possiamo', 'potete', 'possono', 'devo', 'devi', 'deve', 'dobbiamo',
+        'dovete', 'devono', 'voglio', 'vuoi', 'vuole', 'vogliamo', 'volete', 'vogliono', 'mi', 'ti',
+        'gli', 'glie', 'ce', 've', 'se', 'lui', 'lei', 'loro', 'più', 'meno', 'molto', 'poco', 'tanto',
+        'quale', 'quanti', 'quanto', 'questo', 'quello', 'stesso', 'altro', 'nuovo', 'vero', 'falso',
+        'ai', 'al', 'degli', 'del', 'della', 'delle', 'dello', 'dell', 'ad', 'ab', 'accanto', 'addosso',
+        'adesso', 'affatto', 'aggiunto', 'aiuto', 'al', 'altre', 'altri', 'altresì', 'altro', 'alzare'
+    ]);
+    
+    const text = userMessage.toLowerCase().replaceAll(/[?!.,;:]/g, ' ');
+    let words = text.split(/\s+/).filter(w => {
+        return w.length > 2 && !stopWords.has(w);
+    });
+    
+    // Prioritizza le parole lunghe (più specifiche)
+    words.sort((a, b) => b.length - a.length);
+    
+    // Ritorna i primi 5 keyword, ordinati per importanza semantica
+    return words.slice(0, 5);
+}
+
+async function getWikipediaInfo(query) {
+    try {
+        const searchResponse = await fetch(
+            `https://it.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srwhat=text&srlimit=1&format=json&origin=*`
+        );
+        const searchData = await searchResponse.json();
+        
+        if (!searchData.query.search || searchData.query.search.length === 0) {
+            return null;
+        }
+        
+        const pageTitle = searchData.query.search[0].title;
         
         // Ottieni il contenuto della pagina
         const pageResponse = await fetch(
-            `https://it.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pageTitle)}&prop=extracts&explaintext=true&exintro=true&format=json&origin=*`
+            `https://it.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pageTitle)}&prop=extracts&explaintext=true&exintro=true&exlimit=1&format=json&origin=*`
         );
         const pageData = await pageResponse.json();
         const page = Object.values(pageData.query.pages)[0];
         
         if (page.extract) {
-            let extract = page.extract;
-            // Limita a 200 caratteri
-            if (extract.length > 300) {
-                extract = extract.substring(0, 300) + '...';
-            }
-            return `📖 **${pageTitle}**\n\n${extract}\n\n[Leggi di più su Wikipedia](https://it.wikipedia.org/wiki/${encodeURIComponent(pageTitle)})`;
+            return {
+                title: pageTitle,
+                content: page.extract,
+                url: `https://it.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`
+            };
         }
         
         return null;
@@ -165,11 +194,48 @@ async function searchWikipedia(query) {
     }
 }
 
-function extractKeywords(text) {
-    // Rimuovi parole comuni
-    const stopWords = ['che', 'cosa', 'quando', 'dove', 'come', 'per', 'è', 'sono', 'sei', 'hai', 'puoi', 'mi', 'ti', 'lo', 'la', 'un', 'uno', 'una', 'e', 'o', 'di', 'da', 'il', 'su', 'con'];
-    const words = text.split(/\s+/).filter(w => w.length > 3 && !stopWords.includes(w.toLowerCase()));
-    return words.slice(0, 3).join(' ');
+function formatIntelligentResponse(originalQuestion, wikiData, keyword) {
+    const { title, content, url } = wikiData;
+    
+    // Riconosci il tipo di domanda
+    const question = originalQuestion.toLowerCase();
+    
+    let intro = '';
+    
+    if (question.includes('chi era') || question.includes('chi è')) {
+        intro = `Riguardo a "${title}": `;
+    } else if (question.includes('cosa è') || question.includes('cos\'è')) {
+        intro = `Per quanto riguarda "${title}": `;
+    } else if (question.includes('quando')) {
+        intro = `Per quanto riguarda "${title}", ecco cosa ho trovato: `;
+    } else if (question.includes('dove')) {
+        intro = `Riguardo a "${title}": `;
+    } else if (question.includes('come')) {
+        intro = `Per spiegare come funziona "${title}": `;
+    } else if (question.includes('perché')) {
+        intro = `Riguardo al motivo legato a "${title}": `;
+    } else {
+        intro = `Su "${title}" ho trovato questo: `;
+    }
+    
+    // Limita il contenuto a 250-300 caratteri per una lettura fluida
+    let excerpt = content.trim();
+    
+    // Rimuovi i paragrafi vuoti
+    excerpt = excerpt.split('\n').filter(p => p.trim().length > 0).join('\n\n');
+    
+    // Taglia a una lunghezza ragionevole
+    if (excerpt.length > 400) {
+        const sentences = excerpt.split(/[.!?]+/);
+        excerpt = sentences.slice(0, 2).join('. ').trim() + '.';
+        if (excerpt.length > 400) {
+            excerpt = excerpt.substring(0, 400) + '...';
+        }
+    }
+    
+    const response = `${intro}\n\n${excerpt}\n\n[📖 Leggi di più su Wikipedia](${url})`;
+    
+    return response;
 }
 
 function addMessage(text, sender) {
