@@ -55,10 +55,16 @@ async function sendMessage() {
     
     // Simulate bot thinking and response
     setTimeout(async () => {
-        typingDiv.remove();
-        const response = await getAIResponse(message);
-        addMessage(response, 'bot');
-        conversationHistory.push({ role: 'bot', content: response });
+        try {
+            typingDiv.remove();
+            const response = await getAIResponse(message);
+            addMessage(response, 'bot');
+            conversationHistory.push({ role: 'bot', content: response });
+        } catch (error) {
+            console.error('Errore:', error);
+            typingDiv.remove();
+            addMessage('Mi scusa, ho riscontrato un errore. Riprova!', 'bot');
+        }
     }, 800);
 }
 
@@ -112,16 +118,21 @@ async function intelligentSearch(userMessage) {
         // Estrai i termini principali dalla domanda
         const keywords = extractSmartKeywords(userMessage);
         
-        if (!keywords) {
+        if (!keywords || keywords.length === 0) {
             return null;
         }
         
         // Cerca su Wikipedia con i keyword estratti
         for (const keyword of keywords) {
-            const wikiResult = await getWikipediaInfo(keyword);
-            if (wikiResult) {
-                // Formatta la risposta in modo intelligente
-                return formatIntelligentResponse(userMessage, wikiResult, keyword);
+            try {
+                const wikiResult = await getWikipediaInfo(keyword);
+                if (wikiResult) {
+                    // Formatta la risposta in modo intelligente
+                    return formatIntelligentResponse(userMessage, wikiResult, keyword);
+                }
+            } catch (error) {
+                console.log('Errore con keyword:', keyword, error);
+                continue;
             }
         }
         
