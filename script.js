@@ -41,7 +41,7 @@ function addMessage(text, sender) {
     });
     
     messageDiv.innerHTML = `
-        <div>
+        <div class="message-bubble">
             <div class="message-content">${escapeHtml(text)}</div>
             <div class="message-timestamp">${time}</div>
         </div>
