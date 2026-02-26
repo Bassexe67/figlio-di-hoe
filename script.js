@@ -1,37 +1,41 @@
-// DOM elements
-const messagesContainer = document.getElementById('messages');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
+// DOM elements - wait for DOM to be ready
+let messagesContainer, messageInput, sendBtn;
 
-let conversationHistory = [];
-let classifier = null;
-let isModelLoading = true;
-
-// Carica il modello di IA
-async function loadModel() {
-    try {
-        const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0');
-        classifier = await pipeline('zero-shot-classification', 'Xenova/mobilebert-uncased-mnli');
-        isModelLoading = false;
-        console.log('Modello IA caricato!');
-    } catch (e) {
-        console.log('Modello non disponibile, usando risposte intelligenti');
-        isModelLoading = false;
+function initializeDOM() {
+    messagesContainer = document.getElementById('messages');
+    messageInput = document.getElementById('messageInput');
+    sendBtn = document.getElementById('sendBtn');
+    
+    if (!messagesContainer || !messageInput || !sendBtn) {
+        console.error('DOM elementi non trovati!');
+        return false;
     }
+    
+    // Send message on button click
+    sendBtn.addEventListener('click', sendMessage);
+    
+    // Send message on Enter key
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Focus on input field on load
+    messageInput.focus();
+    console.log('DOM inizializzato correttamente');
+    return true;
 }
 
-loadModel();
+// Assicurasi che il DOM sia pronto
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDOM);
+} else {
+    initializeDOM();
+}
 
-// Send message on button click
-sendBtn.addEventListener('click', sendMessage);
-
-// Send message on Enter key
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
-});
+let conversationHistory = [];
 
 async function sendMessage() {
     const message = messageInput.value.trim();
