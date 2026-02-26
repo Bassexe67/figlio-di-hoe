@@ -129,6 +129,22 @@
             padding: 0 8px;
         }
 
+        .typing {
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                content: '';
+            }
+            20% {
+                content: '.';
+            }
+            40% {
+                content: '..';
+            }
+        }
+
         .input-area {
             border-top: 1px solid #e0e0e0;
             padding: 15px;
@@ -211,6 +227,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0"></script>
     <script src="script.js"></script>
 </body>
 </html>
